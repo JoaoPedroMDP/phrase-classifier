@@ -2,3 +2,5 @@ DADOS/*
 dados_formatados/*
 .venv
 .idea
+*.pckl
+__pycache__

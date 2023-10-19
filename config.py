@@ -1,0 +1,2 @@
+MODEL_FILENAME = "model.pckl"
+SPLIT_INTO_TRAIN_TEST = True
