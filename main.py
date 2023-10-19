@@ -1,5 +1,6 @@
 #  coding: utf-8
 import datetime
+import os
 
 import pandas
 import json
@@ -23,7 +24,7 @@ def formata_frases():
         frases_formatadas.append(linha)
 
     df = pandas.DataFrame(frases_formatadas)
-    df.to_csv("DADOS/frases_vetorizadas.csv", index=False, header=False)
+    df.to_csv("dados_formatados/frases_vetorizadas.csv", index=False, header=False)
 
 
 def formata_classif():
@@ -33,7 +34,7 @@ def formata_classif():
         classif_formatadas.append(int(float(classif)))
 
     df = pandas.DataFrame(classif_formatadas)
-    df.to_csv("DADOS/classificacao_das_frases.csv", index=False, header=False)
+    df.to_csv("dados_formatados/classificacao_das_frases.csv", index=False, header=False)
 
 
 def formata_palavras():
@@ -92,10 +93,12 @@ def teste():
 def main():
 
     # Primeiro eu formatei os arquivos pq misericórdia, .dat é de matar
-    # formata_frases()
-    # formata_classif()
-    # formata_palavras()
-    # formata_vetores_palavras()
+    os.makedirs("dados_formatados", exist_ok=True)
+
+    formata_frases()
+    formata_classif()
+    formata_palavras()
+    formata_vetores_palavras()
 
     # Agora quero construir um dicionario com as palavras e seus vetores
     # constroi_dicionario()
