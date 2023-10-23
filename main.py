@@ -2,6 +2,7 @@
 import argparse
 import csv
 import pickle
+from datetime import datetime
 
 import pandas
 import json
@@ -11,6 +12,7 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression, Perceptron
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.decomposition import PCA
 
 from config import MODEL_FILENAME, SPLIT_INTO_TRAIN_TEST
 
@@ -47,7 +49,6 @@ def formata_classif():
     classif_formatadas = []
     for classif in classif_das_frases:
         classif_formatadas.append(int(float(classif)))
-
 
     if SPLIT_INTO_TRAIN_TEST:
         train = classif_formatadas[:int(len(classif_formatadas) * 0.8)]
@@ -133,7 +134,7 @@ def vectorize_phrase(frase: str):
             print(f"Não achou {word}")
             continue
 
-        if final_vector == []:
+        if not final_vector:
             final_vector = vector
 
         final_vector = sum_and_average_vectors(final_vector, vector)
@@ -142,7 +143,6 @@ def vectorize_phrase(frase: str):
 
 
 def get_data(mode: str):
-    
     with open(f"dados_formatados/frases_vetorizadas_{mode}.csv", "r") as f:
         rows = list(csv.reader(f))
         vectorized_phrases = []
@@ -166,31 +166,32 @@ def look_for_trained_models():
         return None
 
 
+def apply_pca(data):
+    pca = PCA(n_components=300)
+    return pca.fit_transform(data)
+    # return data
+
+
 def get_model(test: bool = False):
     model = look_for_trained_models() if not test else None
     if not model or test:
         print("Não existe modelo pronto, treinando...")
         print("Pegando dados de teste")
         vectorized_phrases, phrases_classes = get_data("train")
-        
+
+        reduced = apply_pca(vectorized_phrases)
+
         print("Treinando modelo")
-        # 88.84% de acurácia
-        # model: SVC = SVC().fit(vectorized_phrases, phrases_classes)
-        # 81% de acurácia
-        # model: GaussianNB = GaussianNB().fit(vectorized_phrases, phrases_classes)
-        # 85% de acurácia
-        # model: LogisticRegression = LogisticRegression().fit(vectorized_phrases, phrases_classes)
-        # 88.12% de acurácia
-        # model: RandomForestClassifier = RandomForestClassifier().fit(vectorized_phrases, phrases_classes)
-        # 83.70% de acurácia
-        # model: Perceptron = Perceptron().fit(vectorized_phrases, phrases_classes)
-        
-        # MLP
-        # 90.19% de acurácia
-        # model: MLPClassifier = MLPClassifier((3, 5)).fit(vectorized_phrases, phrases_classes)
-        # 90.38% de acurácia
-        model: MLPClassifier = MLPClassifier((3, 5, 6)).fit(vectorized_phrases, phrases_classes)
-        
+        time = datetime.now()
+        # model: SVC = SVC().fit(reduced, phrases_classes)
+        # model: GaussianNB = GaussianNB().fit(reduced, phrases_classes)
+        # model: LogisticRegression = LogisticRegression().fit(reduced, phrases_classes)
+        # model: RandomForestClassifier = RandomForestClassifier().fit(reduced, phrases_classes)
+        # model: Perceptron = Perceptron().fit(reduced, phrases_classes)
+        model: MLPClassifier = MLPClassifier((3, 5), max_iter=300).fit(reduced, phrases_classes)
+        # model: MLPClassifier = MLPClassifier((3, 5, 6)).fit(reduced, phrases_classes)
+
+        print(f"Tempo de treinamento: {datetime.now() - time}")
         print("Salvando modelo...")
         pickle.dump(model, open(MODEL_FILENAME, "wb"))
 
@@ -200,11 +201,12 @@ def get_model(test: bool = False):
 def test_model(model):
     print("Pegando dados de teste")
     vectorized_phrases, phrases_classes = get_data("test")
+    reduced = apply_pca(vectorized_phrases)
     print("Testando modelo")
-    print(model.score(vectorized_phrases, phrases_classes))
+    print(model.score(reduced, phrases_classes))
+
 
 def main(phrase: str, test: bool = False):
-
     # Primeiro eu formatei os arquivos pq misericórdia, .dat é de matar
     # os.makedirs("dados_formatados", exist_ok=True)
 
@@ -231,12 +233,14 @@ def main(phrase: str, test: bool = False):
         return
 
     vectorized_phrase = vectorize_phrase(phrase)
+    reduced = apply_pca([vectorized_phrase])
     if len(vectorized_phrase) == 0:
         print(f"Não foi possível analisar a frase \"{phrase}\"")
         return
 
     result = model.predict([vectorized_phrase])
     print("Boa" if result == 1 else "Ruim")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
