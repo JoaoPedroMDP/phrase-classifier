@@ -3,6 +3,7 @@ import argparse
 import csv
 import pickle
 from datetime import datetime
+from math import floor
 
 import pandas
 import json
@@ -167,16 +168,16 @@ def look_for_trained_models():
 
 
 def apply_pca(data):
-    pca = PCA(n_components=300)
-    return pca.fit_transform(data)
-    # return data
+    # pca = PCA(n_components=50)
+    # return pca.fit_transform(data)
+    return data
 
 
 def get_model(test: bool = False):
     model = look_for_trained_models() if not test else None
     if not model or test:
         print("Não existe modelo pronto, treinando...")
-        print("Pegando dados de teste")
+        print("Pegando dados de treino")
         vectorized_phrases, phrases_classes = get_data("train")
 
         reduced = apply_pca(vectorized_phrases)
@@ -207,6 +208,9 @@ def test_model(model):
 
 
 def main(phrase: str, test: bool = False):
+    if not phrase and not test:
+        print("Precisa escolher um modo")
+        return
     # Primeiro eu formatei os arquivos pq misericórdia, .dat é de matar
     # os.makedirs("dados_formatados", exist_ok=True)
 
@@ -233,7 +237,6 @@ def main(phrase: str, test: bool = False):
         return
 
     vectorized_phrase = vectorize_phrase(phrase)
-    reduced = apply_pca([vectorized_phrase])
     if len(vectorized_phrase) == 0:
         print(f"Não foi possível analisar a frase \"{phrase}\"")
         return
@@ -245,7 +248,8 @@ def main(phrase: str, test: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog='PhraseBadnessDetector',
-                    description='Detecta se uma frase é boa ou ruim'
+                    description='Detecta se uma frase é boa ou ruim',
+
                     )
     parser.add_argument('--phrase', required=False, help='Frase a ser analisada.')
     parser.add_argument('--test', required=False, help='Se o modelo deve ser testado', default=False, action='store_true')
